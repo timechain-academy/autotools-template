@@ -6,14 +6,14 @@
 # - Customize MIN_IOS_VERSION and other flags as needed
 #
 # Test Environment
-# - macOS 10.14.6
+# - macOS 12+
 # - iOS 13.1
 # - Xcode 11.1
 #
 
 Build() {
     # Ensure -fembed-bitcode builds, as workaround for libtool macOS bug
-    export MACOSX_DEPLOYMENT_TARGET="10.4"
+    export MACOSX_DEPLOYMENT_TARGET="12.0"
     # Get the correct toolchain for target platforms
     export CC=$(xcrun --find --sdk "${SDK}" clang)
     export CXX=$(xcrun --find --sdk "${SDK}" clang++)
@@ -28,50 +28,84 @@ Build() {
         --prefix="${PREFIX}" \
         --exec-prefix="${EXEC_PREFIX}" \
         --enable-static \
+        --with-gui=no \
         --disable-shared  # Avoid Xcode loading dylibs even when staticlibs exist
 
     make clean
     mkdir -p "${PLATFORMS}" &> /dev/null
+    make V=1 -j"${MAKE_JOBS}" --debug=j -C depends
     make V=1 -j"${MAKE_JOBS}" --debug=j
-    make install
+    # make deploy
 }
 
-echo "HI"
+Install(){
+LIB_NAME=`find ${PLATFORMS}/. -iname *.a`
+# install src/*.a "${PLATFORMS}/${PLATFORM}/lib"
+}
+
+Lipo(){
+for LIB_NAME in libbitcoin_cli.a libbitcoin_node.a libbitcoin_common.a libbitcoin_wallet.a libbitcoin_consensus.a
+do
+    echo ${LIB_NAME}
+    lipo -create -output "${UNIVERSAL}/bitcoin.a" "${PLATFORMS}/${PLATFORM_ARM}/lib/${LIB_NAME}" "${PLATFORMS}/${PLATFORM_X86}/lib/${LIB_NAME}"
+done
+}
+
+echo "macos universal build..."
 
 # Locations
 ScriptDir="$( cd "$( dirname "$0" )" && pwd )"
 cd - &> /dev/null
-PREFIX="${ScriptDir}"/_build
+PREFIX="${ScriptDir}"/share/macos
 PLATFORMS="${PREFIX}"/platforms
 UNIVERSAL="${PREFIX}"/universal
 
 # Compiler options
 OPT_FLAGS="-O3 -g3 -fembed-bitcode"
 MAKE_JOBS=8
-MIN_IOS_VERSION=8.0
+MIN_IOS_VERSION=15.6.1
 
 # Build for platforms
 SDK="iphoneos"
 PLATFORM="arm"
 PLATFORM_ARM=${PLATFORM}
-ARCH_FLAGS="-arch arm64 -arch arm64e"  # -arch armv7 -arch armv7s
+ARCH_FLAGS="-arch arm64" #-arch arm64e -arch aarch64"
 HOST_FLAGS="${ARCH_FLAGS} -miphoneos-version-min=${MIN_IOS_VERSION} -isysroot $(xcrun --sdk ${SDK} --show-sdk-path)"
 CHOST="arm-apple-darwin"
 Build
+mkdir -p "${PLATFORMS}/${PLATFORM_ARM}/lib"
+## Install
 
-SDK="iphonesimulator"
-PLATFORM="x86_64-sim"
-PLATFORM_ISIM=${PLATFORM}
+SDK="iphoneos"
+#PLATFORM="arm"
+PLATFORM="x86_64"
+PLATFORM_X86=${PLATFORM}
 ARCH_FLAGS="-arch x86_64"
-HOST_FLAGS="${ARCH_FLAGS} -mios-simulator-version-min=${MIN_IOS_VERSION} -isysroot $(xcrun --sdk ${SDK} --show-sdk-path)"
+HOST_FLAGS="${ARCH_FLAGS} -miphoneos-version-min=${MIN_IOS_VERSION} -isysroot $(xcrun --sdk ${SDK} --show-sdk-path)"
 CHOST="x86_64-apple-darwin"
-Build
+#Build
+mkdir -p "${PLATFORMS}/${PLATFORM_X86}/lib"
+## Install
 
 # Create universal binary
-cd "${PLATFORMS}/${PLATFORM_ARM}/lib"
-LIB_NAME=`find . -iname *.a`
-cd -
-mkdir -p "${UNIVERSAL}" &> /dev/null
-lipo -create -output "${UNIVERSAL}/${LIB_NAME}" "${PLATFORMS}/${PLATFORM_ARM}/lib/${LIB_NAME}" "${PLATFORMS}/${PLATFORM_ISIM}/lib/${LIB_NAME}"
+mkdir -p "${PLATFORMS}/${UNIVERSAL}/lib"
+exit
 
+# for value in libtest_util.a libtest_fuzz.a libbitcoin_cli.a libbitcoin_util.a libbitcoin_node.a libbitcoin_common.a libbitcoin_wallet.a libbitcoin_consensus.a libbitcoin_wallet_tool.a libminisketch.a
+
+#do
+ #   echo $value
+#done
+#libtest_util.a
+#libtest_fuzz.a
+#libbitcoin_cli.a
+#libbitcoin_util.a
+#libbitcoin_node.a
+#libbitcoin_common.a
+#libbitcoin_wallet.a
+#libbitcoin_consensus.a
+#libbitcoin_wallet_tool.a
+#minisketch/libminisketch.a
+# lipo -create -output "${UNIVERSAL}/${LIB_NAME}" "${PLATFORMS}/${PLATFORM_ARM}/lib/${LIB_NAME}" "${PLATFORMS}/${PLATFORM_ISIM}/lib/${LIB_NAME}"
+echo ${LIB_NAME}
 echo "BYE"
