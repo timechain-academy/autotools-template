@@ -33,7 +33,7 @@ Build() {
 
     make clean
     mkdir -p "${PLATFORMS}" &> /dev/null
-    make V=1 -j"${MAKE_JOBS}" --debug=j -C depends
+    # make V=1 -j"${MAKE_JOBS}" --debug=j -C depends
     make V=1 -j"${MAKE_JOBS}" --debug=j
     # make deploy
 }
