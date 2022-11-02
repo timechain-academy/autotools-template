@@ -11,6 +11,17 @@
 # - Xcode 11.1
 #
 
+isSubPath(){
+	if [[ $(realpath --relative-base="$1" -- "$2")  =~ ^/ ]]
+	then printf '%s\n' "$2 NOT subpath of $1"
+	else printf '%s\n' "$2 subpath of $1"
+	fi
+}
+
+VAR=$PROJECT_NAME
+[ ! "${PWD:0:${#VAR}}" = "$VAR" ] && echo "************** $VAR *************" || echo  "************** $PWD *************"
+
+
 Build() {
     # Ensure -fembed-bitcode builds, as workaround for libtool macOS bug
     export MACOSX_DEPLOYMENT_TARGET="12.0"
@@ -22,14 +33,19 @@ Build() {
     export CXXFLAGS="${HOST_FLAGS} ${OPT_FLAGS}"
     export LDFLAGS="${HOST_FLAGS}"
 
+	VAR=$PWD
+	[ ! "${PWD:0:${#VAR}}" = "$VAR" ] && echo "************** $VAR *************" || echo  "************** $PWD *************"
+
     EXEC_PREFIX="${PLATFORMS}/${PLATFORM}"
+	test ./autogen.sh || echo "************** missing autogen.sh *************" && true;
+	test configure.ac && ./autogen.sh || echo "************** missing configure.ac *************" && true;
     ./configure \
         --host="${CHOST}" \
         --prefix="${PREFIX}" \
-        --exec-prefix="${EXEC_PREFIX}" \
-        --enable-static \
-        --with-gui=no \
-        --disable-shared  # Avoid Xcode loading dylibs even when staticlibs exist
+        --exec-prefix="${EXEC_PREFIX}" #\
+        #--enable-static \
+        #--with-gui=no \
+        #--disable-shared  # Avoid Xcode loading dylibs even when staticlibs exist
 
     make clean
     mkdir -p "${PLATFORMS}" &> /dev/null
@@ -54,7 +70,8 @@ done
 echo "macos universal build..."
 
 # Locations
-ScriptDir="$( cd "$( dirname "$0" )" && pwd )"
+ScriptDir="$( cd "$( dirname "$0" )" && pwd)"
+echo $ScriptDir
 cd - &> /dev/null
 PREFIX="${ScriptDir}"/share/macos
 PLATFORMS="${PREFIX}"/platforms
