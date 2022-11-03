@@ -24,12 +24,19 @@ recurse: install-scripts
 	@lipo -info ./recursive/src/foo
 	@lipo -info ./recursive/tests/passing
 	@lipo -info ./recursive/tests/failing
+	@./recursive/src/foo
+	@./recursive/tests/passing
+	#@./recursive/tests/failing
+
 non-recurse: install-scripts
 	@cd ./non-recursive && ./autogen.sh && ./configure
 	@make all -C non-recursive
 	@lipo -info ./non-recursive/foo
 	@lipo -info ./non-recursive/passing
 	@lipo -info ./non-recursive/failing
+	@./non-recursive/foo
+	@./non-recursive/passing
+	#@./non-recursive/failing
 non-recurse-google: install-scripts
 	@cd ./non-recursive-googletest && ./autogen.sh && ./configure
 	@make -C ./non-recursive-googletest
