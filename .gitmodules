@@ -1,0 +1,3 @@
+[submodule "non-recursive-googletest/google-test"]
+	path = non-recursive-googletest/google-test
+	url = https://github.com/google/googletest.git
