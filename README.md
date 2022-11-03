@@ -34,7 +34,7 @@ And some of the others
 First create files, in ROOTDIR:
 
 ```
-mkdir src
+mkdir -p src
 touch configure.ac
 touch Makefile.am
 touch src/Makefile.am
