@@ -33,9 +33,6 @@ Build() {
     export CXXFLAGS="${HOST_FLAGS} ${OPT_FLAGS}"
     export LDFLAGS="${HOST_FLAGS}"
 
-	VAR=$PWD
-	[ ! "${PWD:0:${#VAR}}" = "$VAR" ] && echo "************** $VAR *************" || echo  "************** $PWD *************"
-
     EXEC_PREFIX="${PLATFORMS}/${PLATFORM}"
 	test ./autogen.sh || echo "************** missing autogen.sh *************" && true;
 	test configure.ac && ./autogen.sh || echo "************** missing configure.ac *************" && true;
